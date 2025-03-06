@@ -6,19 +6,16 @@
 import os
 import random
 import string
+
 import pytest
-
-
-from azure.identity import DefaultAzureCredential
-
 from azstoragetorch.io import BlobIO
-
+from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
 
 
 @pytest.fixture
 def account_url():
-    account_name = os.environ.get('AZSTORAGETORCH_STORAGE_ACCOUNT_NAME')
+    account_name = os.environ.get("AZSTORAGETORCH_STORAGE_ACCOUNT_NAME")
     if account_name is None:
         raise ValueError(
             f'"AZSTORAGETORCH_STORAGE_ACCOUNT_NAME" environment variable must be set to run end to end tests.'
@@ -36,7 +33,7 @@ def container_client(account_url):
     blob_service_client = BlobServiceClient(
         account_url, credential=DefaultAzureCredential()
     )
-    container_name = random_resource_name(8)
+    container_name = random_resource_name()
     container = blob_service_client.create_container(name=container_name)
     yield container
     container.delete_container()
@@ -44,7 +41,7 @@ def container_client(account_url):
 
 @pytest.fixture
 def blob_client(container_client, sample_data):
-    blob_name = random_resource_name(8)
+    blob_name = random_resource_name()
     blob_client = container_client.get_blob_client(blob=blob_name)
     blob_client.upload_blob(sample_data)
     return blob_client
@@ -57,15 +54,14 @@ def blob_url(account_url, container_client, blob_client):
 
 @pytest.fixture
 def blob_io(blob_url):
-    yield BlobIO(
-        blob_url=blob_url, mode="rb"
-    )
+    yield BlobIO(blob_url=blob_url, mode="rb")
 
-def random_resource_name(byte_num):
-    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=byte_num))
+
+def random_resource_name(name_length=8):
+    return "".join(random.choices(string.ascii_lowercase + string.digits, k=name_length))
+
 
 class TestRead:
     def test_reads_all_data(self, blob_io, sample_data):
         with blob_io as f:
             assert f.read() == sample_data
-
