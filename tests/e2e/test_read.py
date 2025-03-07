@@ -58,7 +58,9 @@ def blob_io(blob_url):
 
 
 def random_resource_name(name_length=8):
-    return "".join(random.choices(string.ascii_lowercase + string.digits, k=name_length))
+    return "".join(
+        random.choices(string.ascii_lowercase + string.digits, k=name_length)
+    )
 
 
 class TestRead:
