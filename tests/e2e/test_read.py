@@ -45,46 +45,25 @@ def container_client(account_url):
 
 
 @pytest.fixture(scope="module")
-def small_uploaded_blob(account_url, container_client):
-    blob_name = random_resource_name()
-    data = sample_data(20)
-    blob_client = container_client.get_blob_client(blob=blob_name)
-    blob_client.upload_blob(data)
-    url = f"{account_url}/{container_client.container_name}/{blob_name}"
-
-    return Blob(data=data, url=url)
+def small_blob(account_url, container_client):
+    return upload_blob(account_url, container_client, sample_data(20))
 
 
 @pytest.fixture(scope="module")
-def large_uploaded_blob(account_url, container_client):
-    blob_name = random_resource_name()
-    data = sample_data(_PARTITIONED_DOWNLOAD_THRESHOLD * 2)
-    blob_client = container_client.get_blob_client(blob=blob_name)
-    blob_client.upload_blob(data)
-    url = f"{account_url}/{container_client.container_name}/{blob_name}"
-
-    return Blob(data=data, url=url)
+def large_blob(account_url, container_client):
+    return upload_blob(
+        account_url, container_client, sample_data(_PARTITIONED_DOWNLOAD_THRESHOLD * 2)
+    )
 
 
 @pytest.fixture(scope="module")
-def small_with_newlines_uploaded_blob(account_url, container_client):
-    blob_name = random_resource_name()
-    data = sample_data(20, True)
-    blob_client = container_client.get_blob_client(blob=blob_name)
-    blob_client.upload_blob(data)
-    url = f"{account_url}/{container_client.container_name}/{blob_name}"
-
-    return Blob(data=data, url=url)
+def small_with_newlines_blob(account_url, container_client):
+    return upload_blob(account_url, container_client, sample_data_with_newlines(20, 2))
 
 
 @pytest.fixture
-def uploaded_blob(request):
-    if request.param == "small_blob":
-        return request.getfixturevalue("small_uploaded_blob")
-    elif request.param == "large_blob":
-        return request.getfixturevalue("large_uploaded_blob")
-    elif request.param == "small_with_newlines_blob":
-        return request.getfixturevalue("small_with_newlines_uploaded_blob")
+def blob(request):
+    return request.getfixturevalue(f"{request.param}_blob")
 
 
 def random_resource_name(name_length=8):
@@ -93,51 +72,59 @@ def random_resource_name(name_length=8):
     )
 
 
-def sample_data(data_length=20, newline=False):
-    if newline:
-        return "".join(
-            random.choices(string.ascii_letters + string.digits + "\n", k=data_length)
-        ).encode()
+def sample_data(data_length=20):
     return os.urandom(data_length)
+
+
+def sample_data_with_newlines(data_length=20, num_lines=1):
+    lines = []
+    for i in range(num_lines):
+        lines.append(sample_data(int(data_length / num_lines)))
+    return b"\n".join(lines)
+
+
+def upload_blob(account_url, container_client, data):
+    blob_name = random_resource_name()
+    blob_client = container_client.get_blob_client(blob=blob_name)
+    blob_client.upload_blob(data)
+    url = f"{account_url}/{container_client.container_name}/{blob_name}"
+
+    return Blob(data=data, url=url)
 
 
 class TestRead:
     @pytest.mark.parametrize(
-        "uploaded_blob",
+        "blob",
         [
-            "small_blob",
-            "large_blob",
+            "small",
+            "large",
         ],
         indirect=True,
     )
-    def test_reads_all_data(self, uploaded_blob):
-        blob = uploaded_blob
+    def test_reads_all_data(self, blob):
         with BlobIO(blob.url, "rb") as f:
             assert f.read() == blob.data
+            assert f.tell() == len(blob.data)
 
-    @pytest.mark.parametrize("n", [1, 2, 4, 5, 9])
-    @pytest.mark.parametrize("uploaded_blob", ["small_blob"], indirect=True)
-    def test_read_n_bytes(self, uploaded_blob, n):
-        blob = uploaded_blob
-        with BlobIO(blob.url, "rb") as f:
-            for i in range(0, 10, n):
-                assert f.read(n) == blob.data[i : i + n]
+    @pytest.mark.parametrize("n", [1, 5, 20, 21])
+    def test_read_n_bytes(self, small_blob, n):
+        with BlobIO(small_blob.url, "rb") as f:
+            for i in range(0, len(small_blob.data), n):
+                assert f.read(n) == small_blob.data[i : i + n]
+                if n < len(small_blob.data):
+                    assert f.tell() == i + n
 
-    @pytest.mark.parametrize("n", [1, 2, 4, 5, 9])
-    @pytest.mark.parametrize("uploaded_blob", ["small_blob"], indirect=True)
-    def test_random_seeks_and_reads(self, uploaded_blob, n):
-        blob = uploaded_blob
-        with BlobIO(blob.url, "rb") as f:
+    @pytest.mark.parametrize("n", [1, 5, 20, 21])
+    def test_random_seeks_and_reads(self, small_blob, n):
+        with BlobIO(small_blob.url, "rb") as f:
             f.seek(n)
-            assert f.read() == blob.data[n:]
+            assert f.read() == small_blob.data[n:]
+            if n < len(small_blob.data):
+                assert f.tell() == len(small_blob.data)
 
-    @pytest.mark.parametrize(
-        "uploaded_blob", ["small_with_newlines_blob"], indirect=True
-    )
-    def test_read_using_iter(self, uploaded_blob):
-        blob = uploaded_blob
-        with BlobIO(blob.url, "rb") as f:
-            data = b""
-            for i in f:
-                data += i
-            assert data == blob.data
+    def test_read_using_iter(self, small_with_newlines_blob):
+        with BlobIO(small_with_newlines_blob.url, "rb") as f:
+            data = f.read().splitlines()
+            expected_data = small_with_newlines_blob.data.splitlines()
+            for i in data:
+                assert data == expected_data
