@@ -111,20 +111,19 @@ class TestRead:
         with BlobIO(small_blob.url, "rb") as f:
             for i in range(0, len(small_blob.data), n):
                 assert f.read(n) == small_blob.data[i : i + n]
-                if n < len(small_blob.data):
-                    assert f.tell() == i + n
+                expected_position = min(i + n, len(small_blob.data))
+                assert f.tell() == expected_position
 
     @pytest.mark.parametrize("n", [1, 5, 20, 21])
     def test_random_seeks_and_reads(self, small_blob, n):
         with BlobIO(small_blob.url, "rb") as f:
             f.seek(n)
             assert f.read() == small_blob.data[n:]
-            if n < len(small_blob.data):
-                assert f.tell() == len(small_blob.data)
+            expected_position = max(n, len(small_blob.data))
+            assert f.tell() == expected_position
 
     def test_read_using_iter(self, small_with_newlines_blob):
         with BlobIO(small_with_newlines_blob.url, "rb") as f:
-            data = f.read().splitlines()
-            expected_data = small_with_newlines_blob.data.splitlines()
-            for i in data:
-                assert data == expected_data
+            lines = [line for line in f]
+            expected_lines = small_with_newlines_blob.data.splitlines(keepends=True)
+            assert lines == expected_lines
