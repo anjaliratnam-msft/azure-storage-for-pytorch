@@ -4,6 +4,9 @@ import string
 
 import pytest
 import torch
+import ssl
+import functools
+import certifi
 from azstoragetorch.io import BlobIO
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
@@ -11,6 +14,9 @@ from azure.storage.blob import BlobServiceClient
 
 @pytest.fixture(scope="module")
 def model():
+    ssl._create_default_https_context = functools.partial(
+        ssl.create_default_context, cafile=certifi.where()
+    )
     model = torch.hub.load("pytorch/vision:v0.10.0", "resnet18", pretrained=True)
     return model
 
@@ -59,11 +65,16 @@ def random_resource_name(name_length=8):
 
 class TestLoad:
     def test_load_existing_model(self, blob_url):
+        model = torch.hub.load("pytorch/vision:v0.10.0", "resnet18", pretrained=False)
         expected_model = torch.hub.load(
             "pytorch/vision:v0.10.0", "resnet18", pretrained=True
         )
-        model = torch.hub.load("pytorch/vision:v0.10.0", "resnet18", pretrained=False)
+
         with BlobIO(blob_url, "rb") as f:
             state_dict = torch.load(f)
             model.load_state_dict(state_dict)
-        assert model.state_dict() == expected_model.state_dict()
+
+        for key in expected_model.state_dict():
+            assert torch.equal(
+                model.state_dict()[key], expected_model.state_dict()[key]
+            )
