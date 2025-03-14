@@ -17,7 +17,7 @@ def model():
     ssl._create_default_https_context = functools.partial(
         ssl.create_default_context, cafile=certifi.where()
     )
-    model = torch.hub.load("pytorch/vision:v0.10.0", "resnet18", pretrained=True)
+    model = torch.hub.load("pytorch/vision:v0.10.0", "resnet101", pretrained=False)
     return model
 
 
@@ -64,17 +64,14 @@ def random_resource_name(name_length=8):
 
 
 class TestLoad:
-    def test_load_existing_model(self, blob_url):
-        model = torch.hub.load("pytorch/vision:v0.10.0", "resnet18", pretrained=False)
-        expected_model = torch.hub.load(
-            "pytorch/vision:v0.10.0", "resnet18", pretrained=True
+    def test_load_existing_model(self, blob_url, model):
+        test_model = torch.hub.load(
+            "pytorch/vision:v0.10.0", "resnet101", pretrained=False
         )
 
         with BlobIO(blob_url, "rb") as f:
             state_dict = torch.load(f)
-            model.load_state_dict(state_dict)
+            test_model.load_state_dict(state_dict)
 
-        for key in expected_model.state_dict():
-            assert torch.equal(
-                model.state_dict()[key], expected_model.state_dict()[key]
-            )
+        for key in model.state_dict():
+            assert torch.equal(test_model.state_dict()[key], model.state_dict()[key])
