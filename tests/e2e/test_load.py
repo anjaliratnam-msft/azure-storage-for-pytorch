@@ -1,22 +1,35 @@
-import os
-import random
-import string
-
+# -------------------------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License. See LICENSE in the project root for
+# license information.
+# --------------------------------------------------------------------------
 import pytest
 import torch
 import ssl
 import functools
 import certifi
+
 from azstoragetorch.io import BlobIO
-from azure.identity import DefaultAzureCredential
-from azure.storage.blob import BlobServiceClient
 
 
 @pytest.fixture(scope="module")
-def model():
-    ssl._create_default_https_context = functools.partial(
-        ssl.create_default_context, cafile=certifi.where()
+def ssl_inject_certifi(monkeypatch):
+    # Sets the global variable for the SSL certificates file path since torch.hub doesn't use the certifi package
+    monkeypatch.setattr(
+        ssl,
+        "_create_default_https_context",
+        functools.partial(ssl._create_default_https_context, cafile=certifi.where()),
     )
+
+
+@pytest.fixture(scope="module")
+def tmp_path(tmp_path_factory):
+    return tmp_path_factory.mktemp("torch_hub")
+
+
+@pytest.fixture(scope="module")
+def model(tmp_path):
+    torch.hub.set_dir(tmp_path)
     model = torch.hub.load("pytorch/vision:v0.10.0", "resnet101", pretrained=False)
     return model
 
@@ -31,47 +44,17 @@ def upload_model(model, container_client):
     return blob_name
 
 
-@pytest.fixture(scope="module")
-def account_url():
-    account_name = os.environ.get("AZSTORAGETORCH_STORAGE_ACCOUNT_NAME")
-    if account_name is None:
-        raise ValueError(
-            f'"AZSTORAGETORCH_STORAGE_ACCOUNT_NAME" environment variable must be set to run end to end tests.'
-        )
-    return f"https://{account_name}.blob.core.windows.net"
-
-
-@pytest.fixture(scope="module")
-def container_client(account_url):
-    blob_service_client = BlobServiceClient(
-        account_url, credential=DefaultAzureCredential()
-    )
-    container_name = random_resource_name()
-    container = blob_service_client.create_container(name=container_name)
-    yield container
-    container.delete_container()
-
-
 @pytest.fixture()
 def blob_url(account_url, container_client, upload_model):
     return f"{account_url}/{container_client.container_name}/{upload_model}"
 
 
-def random_resource_name(name_length=8):
-    return "".join(
-        random.choices(string.ascii_lowercase + string.digits, k=name_length)
-    )
-
-
 class TestLoad:
     def test_load_existing_model(self, blob_url, model):
-        test_model = torch.hub.load(
-            "pytorch/vision:v0.10.0", "resnet101", pretrained=False
-        )
-
         with BlobIO(blob_url, "rb") as f:
             state_dict = torch.load(f)
-            test_model.load_state_dict(state_dict)
 
-        for key in model.state_dict():
-            assert torch.equal(test_model.state_dict()[key], model.state_dict()[key])
+        assert state_dict.keys() == model.state_dict().keys()
+
+        for key, value in model.state_dict().items():
+            assert torch.equal(state_dict[key], value)
