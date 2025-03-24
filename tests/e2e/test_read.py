@@ -10,8 +10,6 @@ import string
 
 import pytest
 from azstoragetorch.io import BlobIO
-from azure.identity import DefaultAzureCredential
-from azure.storage.blob import BlobServiceClient
 
 
 _PARTITIONED_DOWNLOAD_THRESHOLD = 16 * 1024 * 1024
@@ -21,27 +19,6 @@ _PARTITIONED_DOWNLOAD_THRESHOLD = 16 * 1024 * 1024
 class Blob:
     data: bytes
     url: str
-
-
-@pytest.fixture(scope="module")
-def account_url():
-    account_name = os.environ.get("AZSTORAGETORCH_STORAGE_ACCOUNT_NAME")
-    if account_name is None:
-        raise ValueError(
-            f'"AZSTORAGETORCH_STORAGE_ACCOUNT_NAME" environment variable must be set to run end to end tests.'
-        )
-    return f"https://{account_name}.blob.core.windows.net"
-
-
-@pytest.fixture(scope="module")
-def container_client(account_url):
-    blob_service_client = BlobServiceClient(
-        account_url, credential=DefaultAzureCredential()
-    )
-    container_name = random_resource_name()
-    container = blob_service_client.create_container(name=container_name)
-    yield container
-    container.delete_container()
 
 
 @pytest.fixture(scope="module")
