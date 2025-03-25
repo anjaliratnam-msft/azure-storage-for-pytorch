@@ -12,20 +12,25 @@ from azstoragetorch.io import BlobIO
 @pytest.fixture(scope="module", autouse=True)
 def torch_hub_cache(tmp_path_factory):
     current_dir = torch.hub.get_dir()
-    yield tmp_path_factory.mktemp("torch_hub")
+    torch.hub.set_dir(tmp_path_factory.mktemp("torch_hub"))
+    yield
     torch.hub.set_dir(current_dir)
 
 
 @pytest.fixture(scope="module")
-def model(torch_hub_cache):
-    torch.hub.set_dir(torch_hub_cache)
+def model():
     model = torch.hub.load("pytorch/vision:v0.10.0", "resnet101", pretrained=False)
     return model
 
 
 @pytest.fixture(scope="module")
-def upload_model(model, container_client, torch_hub_cache):
-    blob_name = torch_hub_cache / "model.pth"
+def tmp_path(tmp_path_factory):
+    return tmp_path_factory.mktemp("model")
+
+
+@pytest.fixture(scope="module")
+def upload_model(model, container_client, tmp_path):
+    blob_name = tmp_path / "model.pth"
     torch.save(model.state_dict(), blob_name)
     blob_client = container_client.get_blob_client(blob=blob_name.name)
     with open(blob_name, "rb") as f:
