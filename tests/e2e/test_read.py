@@ -3,11 +3,13 @@
 # Licensed under the MIT License. See LICENSE in the project root for
 # license information.
 # --------------------------------------------------------------------------
-from dataclasses import dataclass
 import os
+import io
 import random
 import string
 import pytest
+
+from dataclasses import dataclass
 from azstoragetorch.io import BlobIO
 
 _PARTITIONED_DOWNLOAD_THRESHOLD = 16 * 1024 * 1024
@@ -99,8 +101,5 @@ class TestRead:
     def test_read_using_iter(self, small_with_newlines_blob):
         with BlobIO(small_with_newlines_blob.url, "rb") as f:
             lines = [line for line in f]
-            expected_lines = [
-                line + b"\n" for line in small_with_newlines_blob.data.split(b"\n")[:-1]
-            ]
-            expected_lines.append(small_with_newlines_blob.data.split(b"\n")[-1])
+            expected_lines = io.BytesIO(small_with_newlines_blob.data).readlines()
             assert lines == expected_lines

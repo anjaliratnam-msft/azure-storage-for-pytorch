@@ -23,18 +23,13 @@ def model():
 
 
 @pytest.fixture(scope="module")
-def tmp_path(tmp_path_factory):
-    return tmp_path_factory.mktemp("model")
-
-
-@pytest.fixture(scope="module")
-def upload_model(model, container_client, tmp_path):
-    blob_name = tmp_path / "model.pth"
-    torch.save(model.state_dict(), blob_name)
-    blob_client = container_client.get_blob_client(blob=blob_name.name)
-    with open(blob_name, "rb") as f:
+def upload_model(model, container_client, tmp_path_factory):
+    model_path = tmp_path_factory.mktemp("model") / "model.pth"
+    torch.save(model.state_dict(), model_path)
+    blob_client = container_client.get_blob_client(blob=model_path.name)
+    with open(model_path, "rb") as f:
         blob_client.upload_blob(f)
-    return blob_name.name
+    return model_path.name
 
 
 @pytest.fixture()
