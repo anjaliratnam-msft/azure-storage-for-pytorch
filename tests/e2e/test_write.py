@@ -41,6 +41,7 @@ def container_client(account_url):
     )
     container_name = random_resource_name()
     container = blob_service_client.create_container(name=container_name)
+    container.set_container_access_policy(signed_identifiers={}, public_access=None)
     yield container
     container.delete_container()
 
