@@ -41,7 +41,6 @@ def container_client(account_url):
     )
     container_name = random_resource_name()
     container = blob_service_client.create_container(name=container_name)
-    container.set_container_access_policy(signed_identifiers={}, public_access=None)
     yield container
     container.delete_container()
 
@@ -121,8 +120,8 @@ class TestWrite:
         indirect=True,
     )
     def test_write_error(self, blob):
-        with BlobIO(blob.url, "wb", credential=None) as f:
-            with pytest.raises(FatalBlobIOWriteError):
+        with pytest.raises(FatalBlobIOWriteError):    
+            with BlobIO(blob.url, "wb", credential=False) as f:
                 f.write(blob.data)
                 f.flush()
             assert not f.closed
