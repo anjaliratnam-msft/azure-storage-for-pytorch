@@ -3,16 +3,13 @@
 # Licensed under the MIT License. See LICENSE in the project root for
 # license information.
 # --------------------------------------------------------------------------
-from dataclasses import dataclass
 import os
 import random
 import string
-
 import pytest
-from azstoragetorch.io import BlobIO
 
-from azure.identity import DefaultAzureCredential
-from azure.storage.blob import BlobServiceClient
+from dataclasses import dataclass
+from azstoragetorch.io import BlobIO
 from azstoragetorch.exceptions import FatalBlobIOWriteError
 
 _STAGE_BLOCK_SIZE = 32 * 1024 * 1024
@@ -22,27 +19,6 @@ _STAGE_BLOCK_SIZE = 32 * 1024 * 1024
 class Blob:
     data: bytes
     url: str
-
-
-@pytest.fixture(scope="module")
-def account_url():
-    account_name = os.environ.get("AZSTORAGETORCH_STORAGE_ACCOUNT_NAME")
-    if account_name is None:
-        raise ValueError(
-            f'"AZSTORAGETORCH_STORAGE_ACCOUNT_NAME" environment variable must be set to run end to end tests.'
-        )
-    return f"https://{account_name}.blob.core.windows.net"
-
-
-@pytest.fixture(scope="module")
-def container_client(account_url):
-    blob_service_client = BlobServiceClient(
-        account_url, credential=DefaultAzureCredential()
-    )
-    container_name = random_resource_name()
-    container = blob_service_client.create_container(name=container_name)
-    yield container
-    container.delete_container()
 
 
 @pytest.fixture(scope="module")
@@ -120,7 +96,7 @@ class TestWrite:
         indirect=True,
     )
     def test_write_error(self, blob):
-        with pytest.raises(FatalBlobIOWriteError):    
+        with pytest.raises(FatalBlobIOWriteError):
             with BlobIO(blob.url, "wb", credential=False) as f:
                 f.write(blob.data)
                 f.flush()
