@@ -5,10 +5,9 @@
 # --------------------------------------------------------------------------
 import pytest
 import torch
-import random
-import string
 
 from azstoragetorch.io import BlobIO
+from utils import random_resource_name
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -30,6 +29,11 @@ def model_path_name(tmp_path_factory):
     return tmp_path_factory.mktemp("model") / f"{random_resource_name()}.pth"
 
 
+@pytest.fixture(scope="module")
+def container_url(account_url, container_client):
+    return f"{account_url}/{container_client.container_name}"
+
+
 @pytest.fixture(scope="module", autouse=True)
 def upload_model(model, container_client, model_path_name):
     torch.save(model.state_dict(), model_path_name)
@@ -39,14 +43,8 @@ def upload_model(model, container_client, model_path_name):
 
 
 @pytest.fixture()
-def state_dict_blob_url(account_url, container_client, model_path_name):
-    return f"{account_url}/{container_client.container_name}/{model_path_name.name}"
-
-
-def random_resource_name(name_length=8):
-    return "".join(
-        random.choices(string.ascii_lowercase + string.digits, k=name_length)
-    )
+def state_dict_blob_url(container_url, model_path_name):
+    return f"{container_url}/{model_path_name.name}"
 
 
 def assert_state_dict(expected_state_dict, actual_state_dict):
@@ -62,11 +60,12 @@ class TestTorchSerialize:
 
         assert_state_dict(model.state_dict(), state_dict)
 
-    def test_save_model(self, model, state_dict_blob_url):
-        with BlobIO(state_dict_blob_url, "wb") as f:
+    def test_save_model(self, model, container_url):
+        save_blob_url = f"{container_url}/{random_resource_name()}.pth"
+        with BlobIO(save_blob_url, "wb") as f:
             torch.save(model.state_dict(), f)
 
-        with BlobIO(state_dict_blob_url, "rb") as f:
+        with BlobIO(save_blob_url, "rb") as f:
             state_dict = torch.load(f)
 
         assert_state_dict(model.state_dict(), state_dict)
