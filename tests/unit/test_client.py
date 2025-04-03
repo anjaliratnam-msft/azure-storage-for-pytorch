@@ -59,6 +59,7 @@ def mock_generated_sdk_storage_client():
 def mock_sdk_blob_client(mock_generated_sdk_storage_client):
     mock_sdk_client = mock.Mock(BlobClient)
     mock_sdk_client._client = mock_generated_sdk_storage_client
+    mock_sdk_client._config = mock.Mock()
     return mock_sdk_client
 
 
@@ -611,3 +612,10 @@ class TestAzStorageTorchBlobClient:
         mock_sdk_blob_client.commit_block_list.assert_called_once_with(
             expected_blob_blocks
         )
+
+    def test_updated_user_agent(self, mock_sdk_blob_client):
+        mock_user_agent_policy = mock.Mock()
+        mock_sdk_blob_client._config = mock.Mock(user_agent_policy=mock_user_agent_policy)
+        client = AzStorageTorchBlobClient(mock_sdk_blob_client)
+        mock_user_agent_policy.add_user_agent.assert_called_once_with("azstoragetorch/0.0.1")
+        

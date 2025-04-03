@@ -58,6 +58,8 @@ class AzStorageTorchBlobClient:
     ):
         self._sdk_blob_client = sdk_blob_client
         self._generated_sdk_storage_client = self._sdk_blob_client._client
+        self._sdk_blob_client._config.user_agent_policy.add_user_agent("azstoragetorch/0.0.1")
+
         if max_in_flight_requests is None:
             max_in_flight_requests = self._get_max_in_flight_requests()
         if executor is None:
