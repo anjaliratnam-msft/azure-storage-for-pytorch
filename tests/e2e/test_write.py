@@ -3,101 +3,96 @@
 # Licensed under the MIT License. See LICENSE in the project root for
 # license information.
 # --------------------------------------------------------------------------
-import os
-import random
-import string
+import io
 import pytest
 
-from dataclasses import dataclass
 from azstoragetorch.io import BlobIO
 from azstoragetorch.exceptions import FatalBlobIOWriteError
+from utils import sample_data, random_resource_name
 
+_SMALL_BLOB_SIZE = 20
+_LARGE_BLOB_SIZE = 32 * 1024 * 1024 * 2
 _STAGE_BLOCK_SIZE = 32 * 1024 * 1024
 
 
-@dataclass
-class Blob:
-    data: bytes
-    url: str
-
-
-@pytest.fixture(scope="module")
-def small_blob(account_url, container_client):
-    return write_blob_url(account_url, container_client, sample_data(20))
-
-
-@pytest.fixture(scope="module")
-def large_blob(account_url, container_client):
-    return write_blob_url(
-        account_url, container_client, sample_data(_STAGE_BLOCK_SIZE * 2)
-    )
-
-
 @pytest.fixture
-def blob(request):
-    return request.getfixturevalue(f"{request.param}_blob")
-
-
-def random_resource_name(name_length=8):
-    return "".join(
-        random.choices(string.ascii_lowercase + string.digits, k=name_length)
-    )
-
-
-def write_blob_url(account_url, container_client, data):
+def blob_url(account_url, container_client):
     blob_name = random_resource_name()
-    url = f"{account_url}/{container_client.container_name}/{blob_name}"
-
-    return Blob(data=data, url=url)
+    return f"{account_url}/{container_client.container_name}/{blob_name}"
 
 
-def sample_data(data_length=20):
-    return os.urandom(data_length)
+def downloaded_blob(container_client, blob_url):
+    blob_client = container_client.get_blob_client(blob=blob_url.split("/")[-1])
+    stream = io.BytesIO()
+    blob_client.download_blob().readinto(stream)
+    return stream.getvalue()
 
 
 class TestWrite:
     @pytest.mark.parametrize(
-        "blob",
-        [
-            "small",
-            "large",
-        ],
-        indirect=True,
+        "blob_size",
+        [_SMALL_BLOB_SIZE, _LARGE_BLOB_SIZE],
     )
-    def test_write_all_content(self, blob):
-        with BlobIO(blob.url, "wb") as f:
-            assert f.write(blob.data) == len(blob.data)
-            assert f.tell() == len(blob.data)
+    def test_write_all_content(self, blob_url, blob_size, container_client):
+        blob_data = sample_data(blob_size)
+        with BlobIO(blob_url, "wb") as f:
+            assert f.write(blob_data) == len(blob_data)
+            assert f.tell() == len(blob_data)
+
+        assert downloaded_blob(container_client, blob_url) == blob_data
 
     @pytest.mark.parametrize(
-        "blob, n",
+        "blob_size, n",
         [
-            ("small", 1),
-            ("small", 5),
-            ("small", 20),
-            ("small", 21),
-            ("large", _STAGE_BLOCK_SIZE * 2),
-            ("large", _STAGE_BLOCK_SIZE * 3),
+            (_SMALL_BLOB_SIZE, 1),
+            (_SMALL_BLOB_SIZE, 5),
+            (_SMALL_BLOB_SIZE, 20),
+            (_SMALL_BLOB_SIZE, 21),
+            (_LARGE_BLOB_SIZE, _STAGE_BLOCK_SIZE * 2),
+            (_LARGE_BLOB_SIZE, _STAGE_BLOCK_SIZE * 3),
         ],
-        indirect=["blob"],
     )
-    def test_write_content_split_up(self, blob, n):
-        with BlobIO(blob.url, "wb") as f:
-            for i in range(0, len(blob.data), n):
-                assert f.write(blob.data[i : i + n]) == min(n, len(blob.data))
-            assert f.tell() == len(blob.data)
+    def test_write_content_in_chunks(self, blob_size, blob_url, container_client, n):
+        blob_data = sample_data(blob_size)
+        written = 0
+        with BlobIO(blob_url, "wb") as f:
+            for i in range(0, len(blob_data), n):
+                chunk = blob_data[i : i + n]
+                assert f.write(chunk) == len(chunk)
+                written += len(chunk)
+                assert f.tell() == written
+
+        assert downloaded_blob(container_client, blob_url) == blob_data
 
     @pytest.mark.parametrize(
-        "blob",
-        [
-            "small",
-            "large",
-        ],
-        indirect=True,
+        "blob_size",
+        [_SMALL_BLOB_SIZE, _LARGE_BLOB_SIZE],
     )
-    def test_write_error(self, blob):
+    def test_write_error(self, blob_size, blob_url):
+        blob_data = sample_data(blob_size)
+        # Forcing an error by using anonymous credentials assuming the account does not allow anonymous write permissions
         with pytest.raises(FatalBlobIOWriteError):
-            with BlobIO(blob.url, "wb", credential=False) as f:
-                f.write(blob.data)
+            with BlobIO(blob_url, "wb", credential=False) as f:
+                f.write(blob_data)
                 f.flush()
-            assert not f.closed
+
+        assert f.closed
+
+    @pytest.mark.parametrize(
+        "blob_size",
+        [_SMALL_BLOB_SIZE, _LARGE_BLOB_SIZE],
+    )
+    def test_overwrite_blob(self, blob_size, blob_url, container_client):
+        blob_data = sample_data(blob_size)
+        with BlobIO(blob_url, "wb") as f:
+            assert f.write(blob_data) == len(blob_data)
+            assert f.tell() == len(blob_data)
+
+        assert downloaded_blob(container_client, blob_url) == blob_data
+
+        blob_data = sample_data(10)
+        with BlobIO(blob_url, "wb") as f:
+            assert f.write(blob_data) == len(blob_data)
+            assert f.tell() == len(blob_data)
+
+        assert downloaded_blob(container_client, blob_url) == blob_data
