@@ -19,6 +19,7 @@ from azure.storage.blob._generated.models import ModifiedAccessConditions
 
 from azstoragetorch._client import AzStorageTorchBlobClient
 from tests.unit.utils import random_bytes
+from azstoragetorch._version import __version__
 
 MB = 1024 * 1024
 DEFAULT_PARTITION_DOWNLOAD_THRESHOLD = 16 * MB
@@ -165,6 +166,7 @@ class TestAzStorageTorchBlobClient:
                 blob_url,
                 credential=credential,
                 connection_data_block_size=256 * 1024,
+                user_agent=f"azstoragetorch/{__version__}",
             )
 
     @pytest.mark.parametrize(
@@ -612,10 +614,3 @@ class TestAzStorageTorchBlobClient:
         mock_sdk_blob_client.commit_block_list.assert_called_once_with(
             expected_blob_blocks
         )
-
-    def test_updated_user_agent(self, mock_sdk_blob_client):
-        mock_user_agent_policy = mock.Mock()
-        mock_sdk_blob_client._config = mock.Mock(user_agent_policy=mock_user_agent_policy)
-        client = AzStorageTorchBlobClient(mock_sdk_blob_client)
-        mock_user_agent_policy.add_user_agent.assert_called_once_with("azstoragetorch/0.0.1")
-        
