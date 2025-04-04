@@ -60,7 +60,6 @@ def mock_generated_sdk_storage_client():
 def mock_sdk_blob_client(mock_generated_sdk_storage_client):
     mock_sdk_client = mock.Mock(BlobClient)
     mock_sdk_client._client = mock_generated_sdk_storage_client
-    mock_sdk_client._config = mock.Mock()
     return mock_sdk_client
 
 
