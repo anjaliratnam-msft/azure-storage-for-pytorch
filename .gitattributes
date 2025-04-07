@@ -7,3 +7,5 @@ text=auto
 
 *.png binary
 *.jpg binary
+
+Makefile text eol=lf
