@@ -10,7 +10,7 @@ jobs:
       with:
         persist-credentials: false
     - name: Build HTML
-      uses: sphinx-doc/sphinx-action@v2
+      uses: ammaraskar/sphinx-action@master
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
