@@ -20,6 +20,8 @@ jobs:
         pip install -r requirements-dev.txt
     - name: Build HTML
       run: sphinx-build -b html doc/sphinx doc/sphinx/build/html
+    - name: Add .nojekyll file
+      run: echo > doc/sphinx/build/html/.nojekyll
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
