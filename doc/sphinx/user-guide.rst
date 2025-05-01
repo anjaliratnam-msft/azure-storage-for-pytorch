@@ -116,7 +116,7 @@ is performed using the `List Blobs API <List Blobs API_>`_. For example
         
         .. literalinclude:: ../../samples/map_dataset/dataset_from_container_url.py
             :lines: 9-
-
+            
     .. tab-item:: ``IterableBlobDataset``
 
         .. literalinclude:: ../../samples/iterable_dataset/dataset_from_container_url.py
@@ -159,6 +159,7 @@ The method accepts a list of blob URLs to create the dataset from. For example
 
         .. literalinclude:: ../../samples/iterable_dataset/dataset_from_blob_list.py
             :lines: 9-
+            
 
 Transforming Dataset Output
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
