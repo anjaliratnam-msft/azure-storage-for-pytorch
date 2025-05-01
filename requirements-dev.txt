@@ -553,6 +553,7 @@ sphinx==7.4.7 ; python_full_version < '3.10' \
     #   furo
     #   sphinx-basic-ng
     #   sphinx-copybutton
+    #   sphinx-design
 sphinx==8.1.3 ; python_full_version == '3.10.*' \
     --hash=sha256:09719015511837b76bf6e03e42eb7595ac8c2e41eeb9c29c5b755c6b677992a2 \
     --hash=sha256:43c1911eecb0d3e161ad78611bc905d1ad0e523e4ddc202a58a821773dc4c927
@@ -561,6 +562,7 @@ sphinx==8.1.3 ; python_full_version == '3.10.*' \
     #   furo
     #   sphinx-basic-ng
     #   sphinx-copybutton
+    #   sphinx-design
 sphinx==8.2.3 ; python_full_version >= '3.11' \
     --hash=sha256:398ad29dee7f63a75888314e9424d40f52ce5a6a87ae88e7071e80af296ec348 \
     --hash=sha256:4405915165f13521d875a8c29c8970800a0141c14cc5416a38feca4ea5d9b9c3
@@ -569,6 +571,7 @@ sphinx==8.2.3 ; python_full_version >= '3.11' \
     #   furo
     #   sphinx-basic-ng
     #   sphinx-copybutton
+    #   sphinx-design
 sphinx-basic-ng==1.0.0b2 \
     --hash=sha256:9ec55a47c90c8c002b5960c57492ec3021f5193cb26cebc2dc4ea226848651c9 \
     --hash=sha256:eb09aedbabfb650607e9b4b68c9d240b90b1e1be221d6ad71d61c52e29f7932b
@@ -576,6 +579,10 @@ sphinx-basic-ng==1.0.0b2 \
 sphinx-copybutton==0.5.2 \
     --hash=sha256:4cf17c82fb9646d1bc9ca92ac280813a3b605d8c421225fd9913154103ee1fbd \
     --hash=sha256:fb543fd386d917746c9a2c50360c7905b605726b9355cd26e9974857afeae06e
+    # via azstoragetorch
+sphinx-design==0.6.1 \
+    --hash=sha256:b11f37db1a802a183d61b159d9a202314d4d2fe29c163437001324fe2f19549c \
+    --hash=sha256:b44eea3719386d04d765c1a8257caca2b3e6f8421d7b3a5e742c0fd45f84e632
     # via azstoragetorch
 sphinxcontrib-applehelp==2.0.0 \
     --hash=sha256:2f29ef331735ce958efa4734873f084941970894c6090408b079c61b2e1c06d1 \
