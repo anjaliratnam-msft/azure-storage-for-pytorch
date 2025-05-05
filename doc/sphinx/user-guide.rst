@@ -114,7 +114,7 @@ is performed using the `List Blobs API <List Blobs API_>`_. For example
 .. tabs::
     .. group-tab:: BlobDataset
         .. literalinclude:: ../../samples/blob_dataset_sample.py
-            :lines: 1-7
+            :lines: 17, 21, 41-45
 
     .. group-tab:: IterableBlobDataset
         .. literalinclude:: ../../samples/iterable_blob_dataset_sample.py 
@@ -126,7 +126,7 @@ a specific prefix, provide the ``prefix`` keyword argument
 .. tabs::
     .. group-tab:: BlobDataset
         .. literalinclude:: ../../samples/blob_dataset_sample.py
-            :lines: 1-5, 9-10
+            :lines: 17, 21, 50-54
     
     .. group-tab:: IterableBlobDataset
         .. literalinclude:: ../../samples/iterable_blob_dataset_sample.py
@@ -147,7 +147,7 @@ The method accepts a list of blob URLs to create the dataset from. For example
 .. tabs::
     .. group-tab:: BlobDataset
         .. literalinclude:: ../../samples/blob_dataset_sample.py
-            :lines: 1-5, 12-20
+            :lines: 17, 21, 58-69
 
     .. group-tab:: IterableBlobDataset
         .. literalinclude:: ../../samples/iterable_blob_dataset_sample.py
