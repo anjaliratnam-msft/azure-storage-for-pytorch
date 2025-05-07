@@ -23,7 +23,7 @@ class BlobIO(io.IOBase):
     :py:func:`torch.save()` or :py:func:`torch.load()`
 
         .. literalinclude:: ../../samples/saving_and_loading_model_sample.py
-            :lines: 1-19
+            :lines: 16-18, 59-64, 36-43, 49-52
 
     :param blob_url: The full endpoint URL to the blob. The URL respects
         SAS tokens, snapshots, and version IDs in its query string.

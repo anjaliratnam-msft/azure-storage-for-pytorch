@@ -56,7 +56,7 @@ directly to :py:func:`torch.save`. When creating the :py:class:`~azstoragetorch.
 specify the URL to the blob you'd like to save the model to and use write mode (i.e., ``wb``)
 
     .. literalinclude:: ../../samples/saving_and_loading_model_sample.py
-        :lines: 1-14
+        :lines: 16-18, 22, 60-64, 36-42
 
 
 Loading a Model
@@ -66,7 +66,8 @@ directly to :py:func:`torch.load`. When creating the :py:class:`~azstoragetorch.
 specify the URL to the blob storing the model weights and use read mode (i.e., ``rb``)
     
     .. literalinclude:: ../../samples/saving_and_loading_model_sample.py
-        :lines: 1-10, 16-19
+        :dedent:
+        :lines: 16-18, 22, 60-64, 46-52
 
 
 .. _datasets-guide:
@@ -114,11 +115,11 @@ is performed using the `List Blobs API <List Blobs API_>`_. For example
 .. tabs::
     .. group-tab:: BlobDataset
         .. literalinclude:: ../../samples/blob_dataset_sample.py
-            :lines: 17, 21, 41-45
+            :lines: 16, 20, 39-45
 
     .. group-tab:: IterableBlobDataset
         .. literalinclude:: ../../samples/iterable_blob_dataset_sample.py 
-            :lines: 1-7        
+            :lines: 16, 20, 39-45       
 
 The above examples lists all blobs in the container. To only include blobs whose name starts with
 a specific prefix, provide the ``prefix`` keyword argument
@@ -126,11 +127,11 @@ a specific prefix, provide the ``prefix`` keyword argument
 .. tabs::
     .. group-tab:: BlobDataset
         .. literalinclude:: ../../samples/blob_dataset_sample.py
-            :lines: 17, 21, 50-54
+            :lines: 16, 20, 52-58
     
     .. group-tab:: IterableBlobDataset
         .. literalinclude:: ../../samples/iterable_blob_dataset_sample.py
-            :lines: 1-5, 9-10
+            :lines: 16, 20, 51-59
 
 
 Create Dataset from List of Blobs
@@ -147,11 +148,11 @@ The method accepts a list of blob URLs to create the dataset from. For example
 .. tabs::
     .. group-tab:: BlobDataset
         .. literalinclude:: ../../samples/blob_dataset_sample.py
-            :lines: 17, 21, 58-69
+            :lines: 16, 20, 62-75
 
     .. group-tab:: IterableBlobDataset
         .. literalinclude:: ../../samples/iterable_blob_dataset_sample.py
-            :lines: 1-5, 12-20
+            :lines: 16, 20, 63-76
 
 Transforming Dataset Output
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
