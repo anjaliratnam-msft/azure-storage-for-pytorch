@@ -1006,22 +1006,25 @@ class TestAzStorageTorchBlobClient:
         )
 
     @pytest.mark.parametrize(
-        "response_error_code,expected_sdk_exception,expected_storage_error_code",
+        "response_error_code,expected_sdk_exception,expected_storage_error_code,headers",
         [
             (
                 "BlobNotFound",
                 azure.core.exceptions.ResourceNotFoundError,
                 StorageErrorCode.BLOB_NOT_FOUND,
+                {"Content-Range": "bytes 1-4/12"}
             ),
             (
                 "ConditionNotMet",
                 azure.core.exceptions.ResourceModifiedError,
                 StorageErrorCode.CONDITION_NOT_MET,
+                {"Content-Range": "bytes 1-4/12"}
             ),
             (
                 "InvalidRange",
                 azure.core.exceptions.HttpResponseError,
                 StorageErrorCode.INVALID_RANGE,
+                {"Content-Range": "bytes */12"}
             ),
         ],
     )
@@ -1035,6 +1038,7 @@ class TestAzStorageTorchBlobClient:
         response_error_code,
         expected_sdk_exception,
         expected_storage_error_code,
+        headers,
     ):
         http_response_error.response.text.return_value = (
             f'<?xml version="1.0" encoding="utf-8"?>'
@@ -1044,6 +1048,7 @@ class TestAzStorageTorchBlobClient:
         )
 
         mock_sdk_blob_client.get_blob_properties.return_value = blob_properties
+        http_response_error.response.headers = headers
         mock_generated_sdk_storage_client.blob.download.side_effect = (
             http_response_error
         )
@@ -1051,39 +1056,31 @@ class TestAzStorageTorchBlobClient:
             azstoragetorch_blob_client.download()
         assert exc_info.value.error_code == expected_storage_error_code
 
-    @pytest.mark.parametrize(
-        "blob_size, response_error_code",
-        [
-            (
-                0,
-                "InvalidRange",
-            ),
-        ],
-    )
-    def test_invalid_range_exception(
+
+    def test_invalid_range_exception_size_zero(
         self,
         azstoragetorch_blob_client,
         mock_sdk_blob_client,
         mock_generated_sdk_storage_client,
         blob_properties,
         http_response_error,
-        blob_size,
-        response_error_code,
     ):
         http_response_error.response.text.return_value = (
             f'<?xml version="1.0" encoding="utf-8"?>'
-            f" <Error><Code>{response_error_code}</Code>"
+            f" <Error><Code>InvalidRange</Code>"
             f" <Message>message</Message>"
             f"</Error>"
         )
-        blob_properties.size = blob_size
+        blob_properties.size = 0
         mock_sdk_blob_client.get_blob_properties.return_value = blob_properties
         http_response_error.status_code = 416
-        http_response_error.response.headers = {"Content-Range": "bytes 0-0/0"}
+        http_response_error.response.headers = {"Content-Range": "bytes */0"}
         mock_generated_sdk_storage_client.blob.download.side_effect = (
             http_response_error
         )
         assert azstoragetorch_blob_client.download() == b""
+        assert azstoragetorch_blob_client.get_blob_size() == 0
+
 
     @pytest.mark.parametrize(
         "retryable_exception_cls", EXPECTED_RETRYABLE_READ_EXCEPTIONS
