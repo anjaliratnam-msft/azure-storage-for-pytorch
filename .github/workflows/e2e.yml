@@ -42,3 +42,5 @@ jobs:
           subscription-id: ${{ secrets.AZURE_E2E_SUBSCRIPTION_ID }}
       - name: Run tests
         run: pytest tests/e2e
+        env:
+          AZSTORAGETORCH_STORAGE_ACCOUNT_NAME: ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}
