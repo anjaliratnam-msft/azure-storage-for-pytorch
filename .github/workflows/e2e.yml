@@ -1,8 +1,6 @@
 name: E2E tests
 on:
-  push:
-    branches:
-      - e2e_workflow
+  workflow_dispatch:
 permissions:
   id-token: write
   contents: read
