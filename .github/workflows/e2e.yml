@@ -39,4 +39,4 @@ jobs:
           tenant-id: ${{ secrets.AZURE_E2E_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_E2E_SUBSCRIPTION_ID }}
       - name: Run tests
-        run: pytest tests/e2e/test_read.py
+        run: pytest tests/e2e
