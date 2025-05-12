@@ -11,9 +11,9 @@ permissions:
   id-token: write
   contents: read
 jobs:
-  # run-ci:
-  #   name: Run CI
-  #   uses: ./.github/workflows/ci.yml
+  run-ci:
+    name: Run CI
+    uses: ./.github/workflows/ci.yml
   run-e2e-tests:
     name: Run tests
 #    needs: build-dists
