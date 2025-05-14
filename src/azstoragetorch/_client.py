@@ -16,7 +16,7 @@ import threading
 import time
 import urllib.parse
 import uuid
-from typing import Optional, List, Tuple, Iterator, Union, Literal, TypedDict
+from typing import Any, Dict, Optional, List, Tuple, Iterator, Union, Literal, TypedDict, cast
 
 from azure.core.credentials import (
     AzureSasCredential,
@@ -53,6 +53,8 @@ class SDKKwargsType(TypedDict, total=False):
     transport: RequestsTransport
     user_agent: str
     credential: SDK_CREDENTIAL_TYPE
+    _additional_pipeline_policies: List[SansIOHTTPPolicy]
+    _pipeline: Pipeline
 
 
 # Policy to ensure that request made by the client matches responses returned. This
@@ -238,7 +240,7 @@ class AzStorageTorchBlobClient:
             max_in_flight_requests = self._get_max_in_flight_requests()
         self._max_in_flight_requests = max_in_flight_requests
         self._executor = executor
-        self._blob_properties = None
+        self._blob_properties: Optional[azure.storage.blob.BlobProperties] = None
 
     @property
     def url(self) -> str:
@@ -287,7 +289,7 @@ class AzStorageTorchBlobClient:
             isinstance(data, memoryview)
             and not self._sdk_supports_memoryview_for_writes()
         ):
-            data = data.obj
+            data = cast(SUPPORTED_WRITE_BYTES_LIKE_TYPE, data.obj)
         stage_block_partitions = self._get_stage_block_partitions(data)
         futures = []
         for pos, length in stage_block_partitions:
@@ -383,7 +385,7 @@ class AzStorageTorchBlobClient:
     def _more_to_download(
         self, updated_offset, remaining_length: Optional[int] = None
     ) -> bool:
-        if self._blob_properties.size <= updated_offset:
+        if self._blob_properties and self._blob_properties.size <= updated_offset:
             return False
         if remaining_length is not None and remaining_length == 0:
             return False
@@ -396,7 +398,7 @@ class AzStorageTorchBlobClient:
             length = self._PARTITIONED_DOWNLOAD_THRESHOLD
         return self._download_with_retries(offset, length)
 
-    def _download_with_retries(self, pos: int, length: int) -> bytes:
+    def _download_with_retries(self, pos: int, length: int) -> bytes:   # type: ignore[return]
         attempt = 0
         while self._attempts_remaining(attempt):
             stream = self._get_download_stream(pos, length)
@@ -424,7 +426,7 @@ class AzStorageTorchBlobClient:
 
     def _get_download_stream(self, pos: int, length: int) -> Iterator[bytes]:
         try:
-            download_kwargs = {
+            download_kwargs: Dict[str, Any] = {
                 "range": f"bytes={pos}-{pos + length - 1}",
             }
             if self._blob_properties is not None:
@@ -444,7 +446,7 @@ class AzStorageTorchBlobClient:
                 self._blob_properties = azure.storage.blob.BlobProperties(
                     **{"Content-Length": 0}
                 )
-                return b""
+                return iter([b""])
             # TODO: This is so that we properly map exceptions from the generated client to the correct
             # exception class and error code. In the future, prior to a GA, we should consider pulling
             # in this function or a derivative of it if we plan to continue to raise Azure Python SDK
@@ -457,12 +459,14 @@ class AzStorageTorchBlobClient:
     def _is_invalid_range_from_empty_blob_error(
         self, error: azure.core.exceptions.HttpResponseError
     ) -> bool:
-        return (
-            error.response
-            and error.status_code == 416
-            and "Content-Range" in error.response.headers
-            and self._get_size_from_range(error.response.headers["Content-Range"]) == 0
-        )
+        if error.response:
+            return (
+                bool(error.response)
+                and error.status_code == 416
+                and "Content-Range" in error.response.headers   # type: ignore[attr-defined]
+                and self._get_size_from_range(error.response.headers["Content-Range"]) == 0 # type: ignore[attr-defined]
+            )
+        return False
 
     def _attempts_remaining(self, attempt_number: int) -> int:
         return max(self._NUM_DOWNLOAD_ATTEMPTS - attempt_number, 0)
