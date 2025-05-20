@@ -62,7 +62,7 @@ jobs:
     name: Run E2E tests
     needs: build-dists
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/new_e2e_workflow' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - name: Download distributions
