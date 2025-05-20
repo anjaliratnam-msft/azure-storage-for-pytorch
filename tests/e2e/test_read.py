@@ -5,7 +5,6 @@
 # --------------------------------------------------------------------------
 import io
 import pytest
-import random
 
 from azstoragetorch.io import BlobIO
 from dataclasses import dataclass
