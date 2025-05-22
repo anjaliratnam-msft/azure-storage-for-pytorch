@@ -16,7 +16,16 @@ import threading
 import time
 import urllib.parse
 import uuid
-from typing import Any, Dict, Optional, List, Tuple, Iterator, Union, Literal, TypedDict, cast
+from typing import (
+    Optional,
+    List,
+    Tuple,
+    Iterator,
+    Union,
+    Literal,
+    TypedDict,
+    cast,
+)
 
 from azure.core.credentials import (
     AzureSasCredential,
@@ -55,6 +64,13 @@ class SDKKwargsType(TypedDict, total=False):
     credential: SDK_CREDENTIAL_TYPE
     _additional_pipeline_policies: List[SansIOHTTPPolicy]
     _pipeline: Pipeline
+
+
+class DownloadKwargsType(TypedDict, total=False):
+    range: str
+    modified_access_conditions: (
+        azure.storage.blob._generated.models.ModifiedAccessConditions
+    )
 
 
 # Policy to ensure that request made by the client matches responses returned. This
@@ -289,7 +305,7 @@ class AzStorageTorchBlobClient:
             isinstance(data, memoryview)
             and not self._sdk_supports_memoryview_for_writes()
         ):
-            data = cast(SUPPORTED_WRITE_BYTES_LIKE_TYPE, data.obj)
+            data = cast(Union[bytes, bytearray], data.obj)
         stage_block_partitions = self._get_stage_block_partitions(data)
         futures = []
         for pos, length in stage_block_partitions:
@@ -398,7 +414,7 @@ class AzStorageTorchBlobClient:
             length = self._PARTITIONED_DOWNLOAD_THRESHOLD
         return self._download_with_retries(offset, length)
 
-    def _download_with_retries(self, pos: int, length: int) -> bytes:   # type: ignore[return]
+    def _download_with_retries(self, pos: int, length: int) -> bytes:
         attempt = 0
         while self._attempts_remaining(attempt):
             stream = self._get_download_stream(pos, length)
@@ -416,6 +432,7 @@ class AzStorageTorchBlobClient:
                     exc_info=True,
                 )
                 time.sleep(backoff_time)
+        raise RuntimeError("Retries are exhausted.")
 
     def _set_blob_properties_from_download(self, response) -> None:
         headers = response.response.headers
@@ -426,7 +443,7 @@ class AzStorageTorchBlobClient:
 
     def _get_download_stream(self, pos: int, length: int) -> Iterator[bytes]:
         try:
-            download_kwargs: Dict[str, Any] = {
+            download_kwargs: DownloadKwargsType = {
                 "range": f"bytes={pos}-{pos + length - 1}",
             }
             if self._blob_properties is not None:
@@ -459,12 +476,12 @@ class AzStorageTorchBlobClient:
     def _is_invalid_range_from_empty_blob_error(
         self, error: azure.core.exceptions.HttpResponseError
     ) -> bool:
-        if error.response:
+        if error.response is not None:
             return (
-                bool(error.response)
-                and error.status_code == 416
-                and "Content-Range" in error.response.headers   # type: ignore[attr-defined]
-                and self._get_size_from_range(error.response.headers["Content-Range"]) == 0 # type: ignore[attr-defined]
+                error.status_code == 416
+                and "Content-Range" in error.response.headers  # type: ignore[attr-defined]
+                and self._get_size_from_range(error.response.headers["Content-Range"])  # type: ignore[attr-defined]
+                == 0
             )
         return False
 
