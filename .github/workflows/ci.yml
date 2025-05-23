@@ -2,7 +2,6 @@ name: Run CI
 on: [push, pull_request, workflow_call]
 permissions:
   contents: read
-  id-token: write
 jobs:
   build-dists:
     name: Build distributions
@@ -62,13 +61,16 @@ jobs:
   run-e2e-tests:
     name: Run E2E tests
     needs: build-dists
+    permissions:
+      id-token: write
+      contents: read
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13" ]
         os: [ ubuntu-latest, macOS-latest, windows-latest ]
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/new_e2e_workflow') || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - name: Download distributions
@@ -82,7 +84,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          python -m pip install .
+          python -m pip install -r requirements-dev.txt
+          python -m pip install --find-links=dist azstoragetorch
           python -m pip install pytest torchvision
       - name: Azure login
         uses: azure/login@6c251865b4e6290e7b78be643ea2d005bc51f69a
@@ -93,4 +96,4 @@ jobs:
       - name: Run tests
         run: pytest tests/e2e
         env:
-          AZSTORAGETORCH_STORAGE_ACCOUNT_NAME: ${{ secrets.AZURE_STORAGE_ACCOUNT_NAME }}
+          AZSTORAGETORCH_STORAGE_ACCOUNT_NAME: ${{ secrets.AZURE_E2E_STORAGE_ACCOUNT_NAME }}
