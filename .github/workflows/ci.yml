@@ -101,7 +101,7 @@ jobs:
           python -m pip install --find-links=dist azstoragetorch
           python -m pip install pytest torchvision
       - name: Azure login
-        uses: azure/login@6c251865b4e6290e7b78be643ea2d005bc51f69a
+        uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5
         with:
           client-id: ${{ secrets.AZURE_E2E_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_E2E_TENANT_ID }}
