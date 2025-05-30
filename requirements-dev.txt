@@ -408,8 +408,10 @@ nvidia-cuda-nvrtc-cu12==12.4.127 ; platform_machine == 'x86_64' and sys_platform
 nvidia-cuda-runtime-cu12==12.4.127 ; platform_machine == 'x86_64' and sys_platform == 'linux' \
     --hash=sha256:64403288fa2136ee8e467cdc9c9427e0434110899d07c779f25b5c068934faa5
     # via torch
-nvidia-cudnn-cu12==9.1.0.70 ; platform_machine == 'x86_64' and sys_platform == 'linux' \
-    --hash=sha256:165764f44ef8c61fcdfdfdbe769d687e06374059fbb388b6c89ecb0e28793a6f
+nvidia-cudnn-cu12==9.10.1.4 ; platform_machine == 'x86_64' and sys_platform == 'linux' \
+    --hash=sha256:3dc46792fad3d76705a50b0747cd4fb026b78bdfbe0ef18a95b53442e2a765f4 \
+    --hash=sha256:5b68945b89195c9eee91d812c375e9db784265b95635d173d695bb85e920e0d3 \
+    --hash=sha256:df73c4dab84df2c54f0a40e6427cde26e8d80feeffef02d749ee42d7da3c8204
     # via torch
 nvidia-cufft-cu12==11.2.1.3 ; platform_machine == 'x86_64' and sys_platform == 'linux' \
     --hash=sha256:f083fc24912aa410be21fa16d157fed2055dab1cc4b6934a0e03cba69eb242b9
