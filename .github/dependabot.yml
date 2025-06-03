@@ -1,13 +1,7 @@
 version: 2
 updates:
-  - package-ecosystem: "uv"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    groups:
-      uv-lock:
-        patterns:
-          - "*"
+  # TODO: Add uv package-ecosystem to update uv lock file. Currently, it doesn't work with dynamic versions. 
+  # https://github.com/dependabot/dependabot-core/issues/12340
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
