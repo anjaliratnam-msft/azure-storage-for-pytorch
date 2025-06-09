@@ -20,26 +20,17 @@ class BlobIO(io.IOBase):
     """File-like object for reading and writing blobs in Azure Blob Storage.
 
     Use this class directly for PyTorch checkpointing by passing it directly to
-    :py:func:`torch.save()` or :py:func:`torch.load()`::
+    :py:func:`torch.save()` or :py:func:`torch.load()`
 
-        import torch
-        import torchvision.models
-        from azstoragetorch.io import BlobIO
+    The sample below shows how to use :py:class:`BlobIO` with :py:func:`torch.save()`
 
-        CONTAINER_URL = "https://<my-storage-account-name>.blob.core.windows.net/<my-container-name>"
+        .. literalinclude:: ../../samples/save_model.py
+            :lines: 9-
 
-        # Sample model to save and load. Replace with your own model.
-        model = torchvision.models.resnet18(weights="DEFAULT")
+    The sample below shows how to use :py:class:`BlobIO` with :py:func:`torch.load()`
 
-        # Save trained model to Azure Blob Storage. This saves the model weights
-        # to a blob named "model_weights.pth" in the container specified by CONTAINER_URL.
-        with BlobIO(f"{CONTAINER_URL}/model_weights.pth", "wb") as f:
-            torch.save(model.state_dict(), f)
-
-        # Load trained model from Azure Blob Storage.  This loads the model weights
-        # from the blob named "model_weights.pth" in the container specified by CONTAINER_URL.
-        with BlobIO(f"{CONTAINER_URL}/model_weights.pth", "rb") as f:
-            model.load_state_dict(torch.load(f))
+        .. literalinclude:: ../../samples/load_model.py
+            :lines: 9-
 
     :param blob_url: The full endpoint URL to the blob. The URL respects
         SAS tokens, snapshots, and version IDs in its query string.
