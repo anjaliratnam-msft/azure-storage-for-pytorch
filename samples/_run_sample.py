@@ -4,7 +4,7 @@
 # license information.
 # --------------------------------------------------------------------------
 
-"""For development purposes only. Serves as a way to automate running of samples."""
+"""For internal development purposes only. Serves as a way to automate running of samples."""
 
 import os
 import sys
@@ -17,12 +17,11 @@ STORAGE_ACCOUNT_NAME = os.environ.get("AZSTORAGETORCH_STORAGE_ACCOUNT_NAME")
 CONTAINER_NAME = os.environ.get("AZSTORAGETORCH_CONTAINER_NAME")
 
 
-def modify_url(path):
+def update_placeholders(path):
     if not STORAGE_ACCOUNT_NAME or not CONTAINER_NAME:
-        print(
+        raise ValueError(
             "Please set environment variables AZSTORAGETORCH_STORAGE_ACCOUNT_NAME and AZSTORAGETORCH_CONTAINER_NAME"
         )
-        return
 
     with open(path, "r") as f:
         content = f.read()
@@ -34,28 +33,16 @@ def modify_url(path):
 
 
 def run_sample(path):
-    modified_content = modify_url(path)
-    if modified_content:
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False
-        ) as temp_file:
+    modified_content = update_placeholders(path)
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with open(os.path.join(temp_dir, "temp_sample.py"), "w") as temp_file:
             temp_file.write(modified_content)
             temp_path = temp_file.name
-        try:
-            result = subprocess.run(
-                [sys.executable, temp_path], capture_output=True, text=True, check=True
-            )
-            print(result.stdout)
-        except subprocess.CalledProcessError as e:
-            print(f"Error running sample: {e.stderr}")
-        finally:
-            os.remove(temp_path)
+        subprocess.run([sys.executable, temp_path], check=True)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Run a sample script with a modified Azure Storage URL"
-    )
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("path", help="Path to the sample script")
     args = parser.parse_args()
     run_sample(args.path)
