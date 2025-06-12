@@ -222,7 +222,7 @@ returned across workers to avoid a :py:class:`~torch.utils.data.DataLoader` from
 duplicate samples from its workers
 
     .. literalinclude:: ../../samples/iterable_dataset/multiple_workers.py
-        :lines: 9-
+        :lines: 9-36
 
 
 .. _Azure subscription: https://azure.microsoft.com/free/
