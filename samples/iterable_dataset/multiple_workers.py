@@ -9,13 +9,13 @@
 from azstoragetorch.datasets import IterableBlobDataset
 from torch.utils.data import DataLoader
 
+# Update URL with your own Azure Storage account and container name
+CONTAINER_URL = (
+    "https://<my-storage-account-name>.blob.core.windows.net/<my-container-name>"
+)
+
 
 def load_with_workers():
-    # Update URL with your own Azure Storage account and container name
-    CONTAINER_URL = (
-        "https://<my-storage-account-name>.blob.core.windows.net/<my-container-name>"
-    )
-
     dataset = IterableBlobDataset.from_container_url(CONTAINER_URL)
 
     # Iterate over the dataset to get the number of samples in it
@@ -37,5 +37,6 @@ def load_with_workers():
 
 
 if __name__ == "__main__":
-    # Protects the entry point of the script and safely imports the module before calling the function
+    # Because the DataLoader uses processes for its workers, this if statement protects the script so that
+    # spawned processes can safely import the module without risk of calling `load_with_workers()` again.
     load_with_workers()
